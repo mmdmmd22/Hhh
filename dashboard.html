@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>پنل مدیریت VPN</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        * {
+            direction: rtl;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #e2e8f0;
+            overflow-x: hidden;
+        }
+
+        .glass {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            border-radius: 16px;
+        }
+
+        .status-dot {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            background: #10b981;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+            margin-left: 8px;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .stat-card {
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid rgba(148, 163, 184, 0.1);
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            background: rgba(30, 41, 59, 0.95);
+            border-color: rgba(148, 163, 184, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .gauge-container {
+            position: relative;
+            width: 180px;
+            height: 180px;
+            margin: 0 auto;
+        }
+
+        .gauge-circle {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: conic-gradient(
+                from 0deg,
+                #3b82f6 0deg,
+                #8b5cf6 90deg,
+                #ec4899 180deg,
+                #f97316 270deg,
+                #6b7280 360deg
+            );
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 4px;
+            position: relative;
+        }
+
+        .gauge-inner {
+            width: 100%;
+            height: 100%;
+            background: #0f172a;
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .gauge-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #3b82f6;
+        }
+
+        .gauge-unit {
+            font-size: 12px;
+            color: #94a3b8;
+            margin-top: 4px;
+        }
+
+        .countdown {
+            font-size: 32px;
+            font-weight: bold;
+            color: #f97316;
+            text-align: center;
+            font-family: 'Courier New', monospace;
+            background: rgba(249, 115, 22, 0.1);
+            padding: 16px;
+            border-radius: 12px;
+            border: 2px solid rgba(249, 115, 22, 0.3);
+        }
+
+        .qr-code-container {
+            text-align: center;
+            padding: 24px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+        }
+
+        .qr-code-img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            background: white;
+            padding: 8px;
+        }
+
+        .copy-btn {
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+            margin-top: 8px;
+        }
+
+        .copy-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(59, 130, 246, 0.4);
+        }
+
+        .vless-link {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            word-break: break-all;
+            font-family: 'Courier New', monospace;
+            margin: 8px 0;
+            color: #60a5fa;
+            max-height: 120px;
+            overflow-y: auto;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+        }
+
+        .header-title {
+            font-size: 28px;
+            font-weight: bold;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        @media (max-width: 768px) {
+            .header-title {
+                font-size: 20px;
+            }
+            
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .gauge-container {
+                width: 140px;
+                height: 140px;
+            }
+
+            .countdown {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="min-h-screen p-4 md:p-8">
+        <div class="max-w-6xl mx-auto">
+            <!-- Header -->
+            <div class="glass p-6 mb-8">
+                <div class="flex items-center justify-between flex-wrap gap-4">
+                    <div>
+                        <h1 class="header-title">پنل مدیریت VPN</h1>
+                        <p class="text-sm text-gray-400 mt-2">سرور آنلاین و کار می‌کند <span class="status-dot"></span></p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-sm text-gray-400">وضعیت:</p>
+                        <p class="text-lg font-semibold text-green-400">✓ فعال</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Server Info Cards -->
+            <div class="info-grid mb-8">
+                <div class="stat-card">
+                    <p class="text-xs text-gray-400 mb-2">آدرس IP</p>
+                    <p class="text-lg font-mono text-blue-400" id="server-ip">دریافت می‌شود...</p>
+                </div>
+                <div class="stat-card">
+                    <p class="text-xs text-gray-400 mb-2">پورت</p>
+                    <p class="text-lg font-mono text-blue-400">443</p>
+                </div>
+                <div class="stat-card">
+                    <p class="text-xs text-gray-400 mb-2">پروتکل</p>
+                    <p class="text-lg font-mono text-blue-400">VLESS + Reality</p>
+                </div>
+                <div class="stat-card">
+                    <p class="text-xs text-gray-400 mb-2">جریان</p>
+                    <p class="text-lg font-mono text-blue-400">xtls-rprx-vision</p>
+                </div>
+            </div>
+
+            <!-- Usage Stats -->
+            <div class="glass p-8 mb-8">
+                <h2 class="text-xl font-semibold mb-8 text-center">مصرف ترافیک</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- Download Gauge -->
+                    <div class="text-center">
+                        <h3 class="text-sm text-gray-400 mb-4">دانلود</h3>
+                        <div class="gauge-container">
+                            <div class="gauge-circle">
+                                <div class="gauge-inner">
+                                    <div class="gauge-value" id="download-value">0</div>
+                                    <div class="gauge-unit" id="download-unit">MB</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Upload Gauge -->
+                    <div class="text-center">
+                        <h3 class="text-sm text-gray-400 mb-4">آپلود</h3>
+                        <div class="gauge-container">
+                            <div class="gauge-circle">
+                                <div class="gauge-inner">
+                                    <div class="gauge-value" id="upload-value">0</div>
+                                    <div class="gauge-unit" id="upload-unit">MB</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Active Connections -->
+                <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4 text-center">
+                    <div class="stat-card">
+                        <p class="text-xs text-gray-400 mb-2">اتصالات فعال</p>
+                        <p class="text-2xl font-bold text-green-400" id="active-connections">0</p>
+                    </div>
+                    <div class="stat-card">
+                        <p class="text-xs text-gray-400 mb-2">زمان باقی‌مانده</p>
+                        <div class="countdown" id="countdown">6:00:00</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- QR Code & VLESS Link -->
+            <div class="glass p-8 mb-8">
+                <h2 class="text-xl font-semibold mb-8 text-center">اتصال سریع</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- QR Code -->
+                    <div class="qr-code-container">
+                        <p class="text-sm text-gray-400 mb-4">اسکن کد QR برای اتصال</p>
+                        <img id="qr-code" src="" alt="QR Code" class="qr-code-img">
+                    </div>
+
+                    <!-- VLESS Link -->
+                    <div>
+                        <p class="text-sm text-gray-400 mb-4">لینک VLESS:</p>
+                        <div class="vless-link" id="vless-link">دریافت می‌شود...</div>
+                        <button class="copy-btn" onclick="copyToClipboard('vless-link')">📋 کپی لینک</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Subscription Link -->
+            <div class="glass p-8 mb-8">
+                <h2 class="text-xl font-semibold mb-4 text-center">لینک اشتراک</h2>
+                <p class="text-sm text-gray-400 mb-3 text-center">این لینک برای دریافت آخرین اتصال استفاده کنید:</p>
+                <div class="vless-link" id="subscription-link">https://raw.githubusercontent.com/mmdmmd22/Hhh/main/sub.txt</div>
+                <button class="copy-btn" onclick="copyToClipboard('subscription-link')" style="width: 100%;">📋 کپی لینک اشتراک</button>
+            </div>
+
+            <!-- Footer -->
+            <div class="text-center text-sm text-gray-500 py-4">
+                <p>ساخت شده توسط GitHub Actions • تمام حقوق محفوظ است</p>
+                <p class="mt-2 text-xs">⏱️ این سرور برای مدت 6 ساعت فعال است</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+        const START_TIME = Date.now();
+        const DURATION_MS = 6 * 60 * 60 * 1000;
+
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return (bytes / Math.pow(k, i)).toFixed(2);
+        }
+
+        function getUnit(bytes) {
+            if (bytes === 0) return 'MB';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return sizes[i];
+        }
+
+        async function updateStats() {
+            try {
+                const response = await fetch(`${API_BASE}/api/stats`);
+                const data = await response.json();
+
+                const downloadValue = formatBytes(data.downlink || 0);
+                const downloadUnit = getUnit(data.downlink || 0);
+                document.getElementById('download-value').textContent = downloadValue.split(' ')[0];
+                document.getElementById('download-unit').textContent = downloadUnit;
+
+                const uploadValue = formatBytes(data.uplink || 0);
+                const uploadUnit = getUnit(data.uplink || 0);
+                document.getElementById('upload-value').textContent = uploadValue.split(' ')[0];
+                document.getElementById('upload-unit').textContent = uploadUnit;
+
+                document.getElementById('active-connections').textContent = data.connections || 0;
+            } catch (error) {
+                console.error('Failed to fetch stats:', error);
+            }
+        }
+
+        function updateCountdown() {
+            const now = Date.now();
+            const elapsed = now - START_TIME;
+            const remaining = Math.max(0, DURATION_MS - elapsed);
+
+            const hours = Math.floor(remaining / (60 * 60 * 1000));
+            const minutes = Math.floor((remaining % (60 * 60 * 1000)) / (60 * 1000));
+            const seconds = Math.floor((remaining % (60 * 1000)) / 1000);
+
+            const timeString = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            document.getElementById('countdown').textContent = timeString;
+
+            if (remaining <= 0) {
+                document.getElementById('countdown').textContent = '0:00:00';
+                document.getElementById('countdown').style.color = '#ef4444';
+            }
+        }
+
+        function copyToClipboard(elementId) {
+            const element = document.getElementById(elementId);
+            const text = element.textContent;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                const button = event.target;
+                const originalText = button.textContent;
+                button.textContent = '✓ کپی شد!';
+                button.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+                
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.style.background = '';
+                }, 2000);
+            }).catch(err => {
+                alert('خطا در کپی کردن');
+            });
+        }
+
+        async function loadConfig() {
+            try {
+                const response = await fetch(`${API_BASE}/api/config`);
+                const config = await response.json();
+
+                document.getElementById('server-ip').textContent = config.ip || 'نامعلوم';
+                document.getElementById('vless-link').textContent = config.vless || 'دریافت نشد';
+                document.getElementById('qr-code').src = config.qr_code || '';
+            } catch (error) {
+                console.error('Failed to load config:', error);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadConfig();
+            updateStats();
+            updateCountdown();
+
+            setInterval(updateStats, 3000);
+            setInterval(updateCountdown, 1000);
+        });
+    </script>
+</body>
+</html>
